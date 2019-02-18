@@ -15,7 +15,7 @@ end
 """upto advances the Sieve s to the greatest next_multiple that is
 less than or equal to candidate.
 Returns true if that next_multiple is equal to candidate.
-Returns true if candidate is equal to that multiple."""
+"""
 function upto(s::Sieve, candidate::Int)
   while (s.next_multiple + s.prime) <= candidate
     s.multiplier += 1
@@ -27,30 +27,88 @@ end
 
 """find_primes continues the search for prime numbers using the Sieves
 provided, appending to sieves as primes are found.
-This function does not terminate."""
-function find_primes(sieves::Vector{Sieve})
-  # Start with 1 more than the biggest prime already found
-  local candidate::Int
-  if length(sieves) > 0
-    candidate = sieves[length(sieves)].prime + 1
-  else
-    # Never consider 1
-    candidate = 2
-  end
-  while true
+Any primes that are less than first_candidate should already be included
+in sieves.
+Returns after the integer stop_after has been considered.
+"""
+function find_primes(sieves::Vector{Sieve}, first_candidate::Int, stop_after::Int)
+  println("find_primes ", first_candidate, " ", stop_after)
+  candidate = first_candidate
+  while candidate <= stop_after
     factored = false
     for s in sieves
       if upto(s, candidate)
-        factored = true
+        factored = true  
         break
       end
     end
     if !factored
-      println(candidate)
       push!(sieves, Sieve(candidate))
     end
     candidate += 1
   end
 end
 
+
+"""load_sieves reads prime nummbers from the specified file and adds them to sieves.
+It is assumed that the contents of the file is a decimal representation of a complete
+set of prime numbers up to some number."""
+function load_sieves(sieves::Vector{Sieve}, filepath::String)
+  local f
+  try
+    f = open(filepath, read = true)
+    for line in eachline(f)
+      n = parse(Int, line)
+      push!(sieves, Sieve(n))
+    end
+  finally
+    if f != nothing
+      close(f)
+    end
+  end
+end
+
+
+"""find_and_save_primes searches for prime numbers, appending them to
+filepath as they are found.
+"""
+function find_and_save_primes(filepath::String)
+  sieves = Sieve[]
+  load_sieves(sieves, filepath)
+  
+  # Start with 1 more than the biggest prime already found
+  local candidate::Int
+  local last_saved_index::Int = 0
+  if length(sieves) > 0
+    candidate = sieves[length(sieves)].prime + 1
+  else
+    # Never consider 1
+    candidate = 2
+  end
+
+  last_saved_index = length(sieves)
+
+  function checkpoint()
+    f = open(filepath, append = true, create = true)
+    while true
+      last_saved_index += 1
+      if last_saved_index > length(sieves)
+        break
+      end
+      println(f, sieves[last_saved_index].prime)
+    end
+    close(f)
+  end
+
+  batch = 100
+  while true
+    stop_after = candidate + batch
+    find_primes(sieves, candidate, stop_after)
+    checkpoint()
+    candidate = stop_after + 1
+  end
+end
+
+# find_and_save_primes("PRIMES")
+find_and_save_primes("c:/Users/Mark Nahabedian/prime_numbers/PRIMES")
 
