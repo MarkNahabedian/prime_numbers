@@ -54,12 +54,16 @@ end
 It is assumed that the contents of the file is a decimal representation of a complete
 set of prime numbers up to some number."""
 function load_sieves(sieves::Vector{Sieve}, filepath::String)
-  local f
+  local f = nothing
   try
     f = open(filepath, read = true)
     for line in eachline(f)
       n = parse(Int, line)
       push!(sieves, Sieve(n))
+    end
+  catch ex
+    if !isa(ex, SystemError)
+      rethrow(ex)
     end
   finally
     if f != nothing
@@ -91,24 +95,38 @@ function find_and_save_primes(filepath::String)
   function checkpoint()
     f = open(filepath, append = true, create = true)
     while true
-      last_saved_index += 1
-      if last_saved_index > length(sieves)
+      if last_saved_index >= length(sieves)
         break
       end
+      last_saved_index += 1
       println(f, sieves[last_saved_index].prime)
     end
     close(f)
   end
 
   batch = 100
-  while true
-    stop_after = candidate + batch
-    find_primes(sieves, candidate, stop_after)
-    checkpoint()
-    candidate = stop_after + 1
+  try
+    while true
+      stop_after = candidate + batch
+      find_primes(sieves, candidate, stop_after)
+      checkpoint()
+      candidate = stop_after + 1
+    end
+  catch ex
+    if isa(ex, InterruptException)
+      f = open("sieve-primes", write = true, truncate = true, create = true)
+        for s in sieves
+          println(f, s.prime)
+        end
+      close(f)
+    end
   end
 end
 
-# find_and_save_primes("PRIMES")
-find_and_save_primes("c:/Users/Mark Nahabedian/prime_numbers/PRIMES")
+
+# Enable catching of keyboard interrupts when not in the REPL:
+ccall(:jl_exit_on_sigint, Nothing, (Cint,), 0)
+
+
+find_and_save_primes("PRIMES")
 
