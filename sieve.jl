@@ -32,7 +32,6 @@ in sieves.
 Returns after the integer stop_after has been considered.
 """
 function find_primes(sieves::Vector{Sieve}, first_candidate::Int, stop_after::Int)
-  println("find_primes ", first_candidate, " ", stop_after)
   candidate = first_candidate
   while candidate <= stop_after
     factored = false
@@ -104,28 +103,13 @@ function find_and_save_primes(filepath::String)
     close(f)
   end
 
-  batch = 100
-  try
-    while true
-      stop_after = candidate + batch
-      find_primes(sieves, candidate, stop_after)
-      checkpoint()
-      candidate = stop_after + 1
-    end
-  catch ex
-    if isa(ex, InterruptException)
-      f = open("sieve-primes", write = true, truncate = true, create = true)
-        for s in sieves
-          println(f, s.prime)
-        end
-      close(f)
-    end
-  end
+  batch = 1000
+  while true
+    stop_after = candidate + batch
+    find_primes(sieves, candidate, stop_after)
+    checkpoint()
+    candidate = stop_after + 1
 end
-
-
-# Enable catching of keyboard interrupts when not in the REPL:
-ccall(:jl_exit_on_sigint, Nothing, (Cint,), 0)
 
 
 find_and_save_primes("PRIMES")
