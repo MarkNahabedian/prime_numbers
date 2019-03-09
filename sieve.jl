@@ -106,10 +106,24 @@ function find_and_save_primes(filepath::String)
   batch = 1000
   while true
     stop_after = candidate + batch
-    find_primes(sieves, candidate, stop_after)
+    try
+        find_primes(sieves, candidate, stop_after)
+    catch e
+        checkpoint()
+        println("\nCheckpointed after exception")
+        if !isa(e, InterruptException)
+           rethrow()
+        end
+        return
+    end
     checkpoint()
     candidate = stop_after + 1
+  end
 end
+
+
+# Allow handling of keyboard interrupt.
+ccall(:jl_exit_on_sigint, Nothing, (Cint,), 0)
 
 
 find_and_save_primes("PRIMES")
