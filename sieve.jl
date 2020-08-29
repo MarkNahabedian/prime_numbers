@@ -1,12 +1,15 @@
 # Find prime numbers using an unbounded Sieve of Eratosthenes approach.
 
 
+MyInteger = Int64    # change to BigInt when we overflow
+
+
 """Sieve represents a single prime number in a 'Sieve of Eratosthenes'."""
 mutable struct Sieve
-  prime::Int
-  next_multiple::Int
-  multiplier::Int
-  function Sieve(prime::Int)
+  prime::MyInteger
+  next_multiple::MyInteger
+  multiplier::MyInteger
+  function Sieve(prime::MyInteger)
     new(prime, prime, 1)
   end
 end
@@ -16,10 +19,17 @@ end
 less than or equal to candidate.
 Returns true if that next_multiple is equal to candidate.
 """
-function upto(s::Sieve, candidate::Int)
-  while (s.next_multiple + s.prime) <= candidate
+function upto(s::Sieve, candidate::MyInteger)
+  while true
+    next = s.next_multiple + s.prime
+    if next < s.next_multiple
+      error("Integer arithmetic wraparound", MyInteger)
+    end
+    if next > candidate
+      break
+    end
     s.multiplier += 1
-    s.next_multiple += s.prime
+    s.next_multiple = next
   end
   return s.next_multiple == candidate
 end
@@ -31,7 +41,7 @@ Any primes that are less than first_candidate should already be included
 in sieves.
 Returns after the integer stop_after has been considered.
 """
-function find_primes(sieves::Vector{Sieve}, first_candidate::Int, stop_after::Int)
+function find_primes(sieves::Vector{Sieve}, first_candidate::MyInteger, stop_after::MyInteger)
   candidate = first_candidate
   while candidate <= stop_after
     factored = false
@@ -57,7 +67,7 @@ function load_sieves(sieves::Vector{Sieve}, filepath::String)
   try
     f = open(filepath, read = true)
     for line in eachline(f)
-      n = parse(Int, line)
+      n = parse(MyInteger, line)
       push!(sieves, Sieve(n))
     end
   catch ex
@@ -80,8 +90,8 @@ function find_and_save_primes(filepath::String)
   load_sieves(sieves, filepath)
   
   # Start with 1 more than the biggest prime already found
-  local candidate::Int
-  local last_saved_index::Int = 0
+  local candidate::MyInteger
+  local last_saved_index::MyInteger = 0
   if length(sieves) > 0
     candidate = sieves[length(sieves)].prime + 1
   else
