@@ -16,3 +16,6 @@ It would be ideal if this program could do
 it's arithmetic as Int for as long as possible
 and then use BigInt once the numbers got too big.
 Something to ponder.
+
+See the file PROGRESS for a summary of how many primes
+have been found so far.

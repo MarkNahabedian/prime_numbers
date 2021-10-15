@@ -85,7 +85,7 @@ end
 """find_and_save_primes searches for prime numbers, appending them to
 filepath as they are found.
 """
-function find_and_save_primes(filepath::String)
+function find_and_save_primes(filepath::String, progresspath::String)
   sieves = Sieve[]
   load_sieves(sieves, filepath)
   
@@ -102,15 +102,21 @@ function find_and_save_primes(filepath::String)
   last_saved_index = length(sieves)
 
   function checkpoint()
-    f = open(filepath, append = true, create = true)
-    while true
-      if last_saved_index >= length(sieves)
-        break
+    # Save primes
+    open(filepath, append = true, create = true) do f
+      while true
+        if last_saved_index >= length(sieves)
+          break
+        end
+        last_saved_index += 1
+        println(f, sieves[last_saved_index].prime)
       end
-      last_saved_index += 1
-      println(f, sieves[last_saved_index].prime)
     end
-    close(f)
+    # Update progress:
+    open(progresspath, "w") do f
+      println(f, "$(length(sieves)) primes found")
+      println(f, "largest so far: $(sieves[end].prime)")
+    end
   end
 
   batch = 1000
@@ -136,5 +142,5 @@ end
 ccall(:jl_exit_on_sigint, Nothing, (Cint,), 0)
 
 
-find_and_save_primes("PRIMES")
+find_and_save_primes("PRIMES", "PROGRESS")
 
