@@ -8,7 +8,9 @@ that I think of as Inverted Sieve of Eratosthenes.
 To use Sieve of Eratosthenes, one must first pick
 an upper bound for the search.
 
-The algorithm here has no upper bound.
+The algorithm here has no upper bound.  Wikipedia suggests that this
+might be called the Incremental Sieve of Eratosthenes, but my approach
+here seems a bit more primitive than what Wikipedia describes.
 
 What it does not deal with yet is arithmetic overflow.
 Julia just wraps around on overflow.
